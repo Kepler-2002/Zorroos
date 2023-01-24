@@ -1,8 +1,8 @@
-const std = @import("std");
+pub const std = @import("std");
 
-const sys = @import("sys.zig");
+pub const sys = @import("sys.zig");
 const rt = @import("rt.zig");
-const io = @import("io.zig");
+pub const io = @import("io.zig");
 
 const fmt = @import("cfmt.zig");
 const printf = fmt.printf; 
@@ -19,6 +19,7 @@ pub fn panic(error_message: []const u8, stack: ?*std.builtin.StackTrace, len: ?u
 
 export fn main() callconv(.C) void {
     rt.emptyBss(); 
-    printf("%s %s\n", .{ "Hello", "World", });  
+    @import("kernel.zig").main() catch |err| switch (err) {
+    }; 
     @panic("end of program");
 }

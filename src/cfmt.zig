@@ -51,6 +51,11 @@ pub fn format(
                         try writeDecimalInt(writer, val); 
                     }, 
                     'u' => {
+                        if (field_i >= fields_info.len) {
+                            @compileError("Expected an unsigned integer for operator '%u' but missing"); 
+                        }
+                        const val = @field(args, fields_info[field_i].name); 
+                        try writeDecimalUint(writer, val); 
                     }, 
                     'x' => {
                     }, 
@@ -79,6 +84,30 @@ fn writeDecimalInt(writer: anytype, value: anytype) !void {
     const value_type = @typeInfo(@TypeOf(value));
     if (value_type != .Int and value_type != .ComptimeInt) {
         @compileError("Decimal operator should use on signed integer"); 
+    }
+    var buffer: [40] u8 = undefined; 
+    var index : usize = buffer.len - 1; 
+    if (value == 0) {
+        try writer.writeByte('0');  
+        return ; 
+    } 
+    var tmp = value; 
+    while (true) {
+        var rem = @rem(tmp, @as(i32, 10)); 
+        tmp = @divFloor(tmp, 10);
+        buffer[index] = @intCast(u8, rem) + @as(u8, '0'); 
+        if (tmp == 0) {
+            _ = try writer.writeAll(buffer[index..buffer.len]);
+            return ; 
+        }
+        index -= 1; 
+    } 
+}
+
+fn writeDecimalUint(writer: anytype, value: anytype) !void {
+    const value_type = @typeInfo(@TypeOf(value));
+    if (value_type != .Uint and value_type != .ComptimeUInt) {
+        @compileError("Decimal operator should use on unsigned integer"); 
     }
     var buffer: [40] u8 = undefined; 
     var index : usize = buffer.len - 1; 
