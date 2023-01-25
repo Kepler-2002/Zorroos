@@ -7,4 +7,3 @@
 -nographic \
 -bios rustsbi-qemu.bin \
 -device loader,file=zig-out/bin/out.bin,addr=0x80200000 $*
-

@@ -1,4 +1,4 @@
-pub fn getStdout() Stdout {
+pub fn getStdOut() Stdout {
     return Stdout {}; 
 }
 

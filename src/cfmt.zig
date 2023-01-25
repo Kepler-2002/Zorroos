@@ -1,7 +1,7 @@
 const io = @import("io.zig"); 
 
 pub fn printf(comptime fmt: [] const u8, args: anytype) void {
-    const stdout = io.getStdout().writer(); 
+    const stdout = io.getStdOut().writer(); 
     format(stdout, fmt, args) catch |v| switch (v) { };
 }
 
@@ -126,4 +126,16 @@ fn writeDecimalUint(writer: anytype, value: anytype) !void {
         }
         index -= 1; 
     } 
+}
+
+const c = struct {
+    usingnamespace @cImport( @cInclude("stddef.h") ); 
+    const size_t = @This().__SIZE_TYPE__; 
+}; 
+
+pub export fn puts(str: [*:0] const u8) callconv(.C) c.size_t {
+    var len : c.size_t = 0; 
+    while (str[len] != 0) : (len += 1) {} 
+    io.getStdOut().writer().writeAll(str[0..len]) catch @panic("invalid output in 'puts'");
+    return len; 
 }
