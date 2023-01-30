@@ -1,4 +1,4 @@
-fn syscall(id: usize, args: [3] usize) callconv(.Inline) usize {
+pub fn syscall(id: usize, args: [3] usize) callconv(.Inline) usize {
     return asm volatile (
         "ecall" 
         : [ret] "={x10}" (->usize)
@@ -24,10 +24,16 @@ pub fn unsafePrintBuffer(chars : []const u8) void {
     }
 }
 
-const call_literals = struct {
-    const sbi = struct {
-        const shutdown : usize = 8; 
-        const console_putchar : usize = 1; 
+pub const call_literals = struct {
+    pub const sbi = struct {
+        pub const shutdown : usize = 8; 
+        pub const console_putchar : usize = 1; 
     };
     usingnamespace sbi; 
+    pub const abi = struct {
+        pub const write : usize = 64; 
+        pub const exit : usize = 93; 
+    }; 
 }; 
+
+pub const abi = @import("sys/abi.zig");

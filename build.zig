@@ -6,14 +6,15 @@ const plat = "riscv64 in qemu";
 
 const stdout = std.io.getStdOut().writer();
 
+const CrossTarget = std.zig.CrossTarget;
+
 pub fn build(b: *Builder) !void {
 
-    const target = .{
-        .cpu_arch = .riscv64,
-        .cpu_model = .{ .explicit = &std.Target.riscv.cpu.generic_rv64 },
-        .os_tag = .freestanding,
-        .abi = .none,
-    };
+    var diags: CrossTarget.ParseOptions.Diagnostics = .{};
+    const select = CrossTarget.parse(.{
+        .arch_os_abi = "riscv64-freestanding-none", 
+        .diagnostics = &diags,
+    }) catch unreachable; 
 
     try stdout.print("正在编译" ++ plat ++ "\n", .{});
 
@@ -26,13 +27,11 @@ pub fn build(b: *Builder) !void {
 
     src.addIncludePath("./src"); 
 
-    src.setTarget(target);
+    src.setTarget(select); 
 
-    // src.setBuildMode(std.builtin.Mode.ReleaseSmall);//ReleaseSmall); // Debug);//
-    src.setBuildMode(.ReleaseSafe);
-    // src.setBuildMode(.Debug); 
+    src.setBuildMode(std.builtin.Mode.ReleaseSafe);
 
-    src.want_lto = false; // 禁用lto，因为启用则llvm连接时会把本该放到bin文件中特定数据段的的全局常量忽略，当成未引用的数据给优化掉！
+    // src.want_lto = false; // 禁用lto，因为启用则llvm连接时会把本该放到bin文件中特定数据段的的全局常量忽略，当成未引用的数据给优化掉！
 
     src.code_model = .medium;
 

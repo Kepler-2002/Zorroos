@@ -22,3 +22,28 @@ pub fn emptyBss() void {
     const length = @ptrToInt(&ebss) - @ptrToInt(&sbss); 
     @memset(start_ptr, 0, length);
 }
+
+comptime {
+    asm( 
+        \\.align 3
+        \\.section .data 
+        \\.global app_numbers
+        \\app_numbers: 
+        \\.quad 2 
+        \\.quad app0_start
+        \\.quad app1_start
+        \\.quad app1_end 
+        \\.section .data 
+        \\.global app0_start
+        \\.global app0_end 
+        \\app0_start: 
+        \\.incbin "apps/hello/zig-out/bin/hello.bin"
+        \\app0_end: 
+        \\.section .data
+        \\.global app1_start
+        \\.global app1_end
+        \\app1_start:
+        \\.incbin "apps/view/zig-out/bin/view.bin"
+        \\app1_end:
+    );
+}
