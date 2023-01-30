@@ -23,7 +23,7 @@ pub fn build(b: *Builder) !void {
     } 
 
     // .1，共三层依赖关系：1生成elf，2复制到./zig-out/bin/目录，3最终的build step(shell中可见)
-    const src = b.addExecutable("out", "src/main.zig");
+    const src = b.addExecutable("out", "src/app.zig");
 
     src.addIncludePath("./src"); 
 
