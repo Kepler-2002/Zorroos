@@ -3,10 +3,24 @@ pub const AppManager = struct {
     current: usize, 
     app_start: [] usize, 
     /// assume the next program exists, then run it 
-    pub fn run(p: * AppManager, ) !void {
+    pub fn run(p: * AppManager, ) noreturn {
         // run thie program ~ 
         var s = p.app_start[p.current]; 
         _ = s; 
+        var sstatus = asm ( "csrr %[s], sstatus" : [s] "=r" (-> usize) ); 
+        sstatus &= ~@as(usize, 0x80);
+        const addr = 0x80400000; 
+        var context : TrapContext = .{ 
+            .x = blk: {
+                var blocks : [32] usize = undefined; 
+                blocks[1] = @ptrToInt(&root.user_stack) + @sizeOf(@TypeOf(root.user_stack)); 
+                break :blk blocks; 
+            }, 
+            .sstatus = sstatus,  
+            .sepc = addr, 
+        }; 
+        restore(@ptrCast(?[*] u8, &context)); 
+        unreachable; 
     }
 }; 
 
@@ -23,11 +37,11 @@ const root = @import("root");
 export fn trap_handle(trap_context: *TrapContext) callconv(.C) *TrapContext {
     const scause: usize = asm (
         \\csrr %[r1], scause
-        : [r1] "={t0}" (-> usize) 
+        : [r1] "=r" (-> usize) 
     ); 
     const stval : usize = asm (
         \\csrr %[r2], stval
-        : [r2] "={t1}" (-> usize) 
+        : [r2] "=r" (-> usize) 
     ); 
     const writer = root.writer; 
     writer.print("scause: {}; stval: 0x{x}\n", .{ scause, stval }) catch |a| switch (a) {}; 
@@ -41,6 +55,10 @@ export fn trap_handle(trap_context: *TrapContext) callconv(.C) *TrapContext {
     } else {
         @panic("todo");
     }
+}
+
+fn syscall(id: usize, args: [3] usize) isize {
+    _ = .{ id, args }; 
 }
 
 comptime {
@@ -94,7 +112,7 @@ comptime {
     ); 
 }
 
-extern fn restore( kernel_stack_pointer: ?[*] align(4096) u8 ) callconv(.C) void ; 
+extern fn restore( kernel_stack_pointer: ?[*] u8 ) callconv(.C) void ; 
 
 // deprecated codes (asm): use macro alt to inline them. 
         // \\sd x5, 5*8(sp)

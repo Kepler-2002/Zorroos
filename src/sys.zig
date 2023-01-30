@@ -37,3 +37,18 @@ pub const call_literals = struct {
 }; 
 
 pub const abi = @import("sys/abi.zig");
+
+pub fn write(fd: usize, buf: [*] const u8, len: usize) isize {
+    switch (fd) {
+        1 => {
+            unsafePrintBuffer(buf[0..len]); 
+            return @bitCast(isize, len); 
+        }, 
+        else => @panic("Unsupport fd in sys write"), 
+    }
+}
+
+pub fn exit(xstate: i32) noreturn {
+    @import("root").writer.print("\x1b[32;1m[KERNEL] Application exited with code {}\x1b[0m\n", .{ xstate }) catch |a| switch (a) {}; 
+    @import("manager.zig").manager.run(); 
+}

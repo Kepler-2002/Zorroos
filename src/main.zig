@@ -6,7 +6,7 @@ pub const io = @import("io.zig");
 
 pub const os = @import("os.zig"); 
 
-pub var kernel_stack : [4096 * 2] u8 align(4096) = undefined; 
+var kernel_stack : [4096 * 2] u8 align(4096) = undefined; 
 pub var user_stack : @TypeOf(kernel_stack) = undefined; 
 
 pub fn panic(error_message: []const u8, stack: ?*std.builtin.StackTrace, len: ?usize) noreturn {
@@ -44,7 +44,7 @@ export fn main() callconv(.C) void {
         //set the kernel stack support 
         asm volatile (
             "csrw sscratch, %[val]"
-            : : [val] "{t0}" (@ptrToInt(&kernel_stack))
+            : : [val] "r" (@ptrToInt(&kernel_stack))
         ); 
 
         // the addr [XLEN - 1: 2] handle addr ; 
@@ -62,11 +62,11 @@ export fn main() callconv(.C) void {
         // set the trap handle now ~ 
         asm volatile (
             \\csrw stvec, %[val]
-            : : [val] "{t0}" (stvec_val) 
+            : : [val] "r" (stvec_val) 
         ); 
 
         writer.print("the stack of the kernel: 0x{x}!\nBut My ptr: {x}~ \n", .{ 
-            asm ("csrr %[ret], sscratch" : [ret] "={t0},{t1},{t2}" (-> usize)), 
+            asm ("csrr %[ret], sscratch" : [ret] "=r" (-> usize)), 
             @ptrToInt(&kernel_stack), 
         }) catch |a| switch (a) {}; 
 
@@ -89,6 +89,8 @@ export fn main() callconv(.C) void {
             .current = 0, 
             .app_start = data_ptr[1..(len + 1)],
         };
+        writer.print("[INFO] start application.\n", .{}) catch |v| switch (v) {}; 
+        manager.manager.run(); 
     }
 
     // give some log here ~
