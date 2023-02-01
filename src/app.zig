@@ -8,7 +8,7 @@ pub const os = @import("os.zig");
 
 pub const writer = os.writer; 
 
-extern fn trap() callconv(.C) void; 
+extern fn trap() align(4) callconv(.C) void; 
 
 export fn main() callconv(.C) void {
     os.init() catch |a| { @panic(@errorName(a)); }; 
@@ -16,13 +16,21 @@ export fn main() callconv(.C) void {
     // the addr [XLEN - 1: 2] handle addr ; 
     // mode = 0 : pc to base 
     const base = @ptrToInt(&trap);
-    const stvec_val : usize = base & ~@as(usize, 0x3); 
+    // const stvec_val : usize = base & ~@as(usize, 0x3); 
+    const stvec_val : usize = base; 
+
+    writer.print("stvec: 0x{x}!\n", .{ stvec_val }) catch unreachable; 
 
     // set the trap handle
     asm volatile (
         \\csrw stvec, %[val]
         : : [val] "r" (stvec_val) 
     ); 
+
+    {
+        const sstatus : usize = 0b1_0011_0000; 
+        asm volatile ("csrw sstatus, %[s]" : : [s] "r" (sstatus) ); 
+    }
 
     {
         var len = app_info[0]; 
@@ -32,15 +40,19 @@ export fn main() callconv(.C) void {
             .app = offsetptr[0..len], 
         }; 
         // check the manager val ~ 
-        writer.print("\x1b[36;1m[  INFO] Initial the manager: \n\tnumber: {}\n\tcurrent: {}\n\tapp: {any}\x1b[0m\n",
-            .{ manager.app_numbers, manager.current, manager.app }) catch unreachable; 
+        writer.print("\x1b[36;1m[  INFO] Initial the manager: \n\tnumber: {}\n\tcurrent: {}\n\tapp: {{ ", 
+            .{ manager.app_numbers, manager.current, }) catch unreachable; 
+        for (manager.app) |a| {
+            writer.print("start: 0x{x}, end: 0x{x}; ", .{ a[0], a[1] }) catch unreachable; 
+        }
+        writer.writeAll("}\x1b[0m\n") catch unreachable; 
     }
 
     manager.run_next_or_exit(); 
 
 }
 
-var manager : Manager = undefined; 
+pub var manager : Manager = undefined; 
 
 pub const Manager = struct {
     app_numbers: usize, 
@@ -59,62 +71,36 @@ pub const Manager = struct {
         writer.print("\x1b[34;1m[ DEBUG] At Manager.run_next_or_exit debug, now sp: 0x{x}.\x1b[0m\n", .{ 
             asm ( "" : [_] "={sp}" (-> usize) ), 
         }) catch unreachable; 
-        @panic("[  TODO] fn: Manager ~ run next or exit ");
+        var context :traplib.TrapContext = undefined; 
+        context = traplib.TrapContext {
+            .x = blk: {
+                var x: @TypeOf(context.x) = undefined; 
+                x[2] = @ptrToInt(&os.user_stack); 
+                break :blk x; 
+            }, 
+            .sepc = 0x80400000, 
+            .sstatus = blk: {
+                var x: usize = asm ("csrr %[x], sstatus": [x] "=r" (-> usize));
+                writer.print("{b:032}\n", .{x}) catch unreachable; 
+                x &= ~@as(usize, 0x100);
+                writer.print("{b:032}\n", .{x}) catch unreachable; 
+                break :blk x; 
+            }
+        }; 
+        {
+            @memset(@intToPtr([*] u8, 0x80400000), 0, 0x100000); 
+            var len = self.app[self.current][1] - self.app[self.current][0]; 
+            @memcpy(@intToPtr([*] u8, 0x80400000), @intToPtr([*] const u8, self.app[self.current][0]), len); 
+            asm volatile ("fence.i"); 
+        }
+        self.current += 1; 
+        traplib.restore(&context); 
     }
 
 }; 
 
-comptime {
-    _ = @import("manager.zig"); 
-}
+pub const traplib = @import("trap.zig"); 
 
 comptime {
-    asm (
-        \\.altmacro 
-        \\.macro saverg n
-        \\  sd x\n, 8*\n(sp)
-        \\.endm 
-        \\.align 2 
-        \\.section .text
-        \\trap: 
-        \\csrrw sp, sscratch, sp
-        \\addi sp, sp, -34 * 8
-        \\sd x1, 8(sp)
-        \\sd x3, 3*8(sp)
-        \\.set n, 5
-        \\.rept 27 
-        \\  saverg %n 
-        \\  .set n, n+1
-        \\.endr 
-        \\csrr t0, sstatus
-        \\csrr t1, sepc
-        \\sd t0, 32*8(sp)
-        \\sd t1, 33*8(sp)
-        \\csrr t2, sscratch
-        \\sd t2, 2*8(sp)
-        \\mv a0, sp
-        \\call trap_handle
-
-        \\.macro loadrg n
-        \\  ld x\n, \n*8(sp)
-        \\.endm 
-        \\restore: 
-        \\  mv sp, a0
-        \\  ld t0, 32*8(sp)
-        \\  ld t1, 33*8(sp)
-        \\  ld t2, 2*8(sp)
-        \\  csrw sstatus, t0 
-        \\  csrw sepc, t1
-        \\  csrw sscratch, t2
-        \\  loadrg 1
-        \\  loadrg 3
-        \\.set n, 5
-        \\.rept 27
-        \\  loadrg %n
-        \\  .set n, n+1
-        \\.endr
-        \\addi sp, sp, 34*8
-        \\csrrw sp, sscratch, sp
-        \\sret 
-    ); 
+    _ = traplib; 
 }

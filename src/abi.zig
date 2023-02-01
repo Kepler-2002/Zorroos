@@ -20,7 +20,7 @@ pub fn write(fd: usize, bytes: [] const u8) usize {
 
 /// exit user-mode application support: exit this application and then run the next one. 
 pub fn exit(xstate: i32) noreturn {
-    const manager = @import("manager.zig").manager; 
+    const manager = @import("app.zig").manager; 
     const prefix = if (xstate == 0) "\x1b[32;1m" else "\x1b[33;1m"; 
     const now_index = manager.current; 
     writer.print("{s} User mode application {} ends, with the exit code: {}. \x1b[0m", .{ prefix, now_index, xstate, }) catch unreachable; 

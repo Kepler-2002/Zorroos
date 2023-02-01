@@ -1,9 +1,10 @@
-const sys = @import("../sys.zig");
-const call_literals = sys.call_literals.abi; 
-const syscall = sys.syscall; 
+/// 
+const sbi = @import("../sbi.zig"); 
+pub const call_literals = sbi.call_literals.abi; 
+pub const syscall = sbi.syscall; 
 
 pub fn exit(xstate: i32) noreturn {
-    _ = syscall(call_literals.exit, [3] usize { @intCast(u64, @bitCast(u32, xstate)), 0, 0, });  
+    _ = syscall(call_literals.exit, [3] usize { @intCast(usize, @bitCast(u32, xstate)), 0, 0, });  
     unreachable; 
 }
 
