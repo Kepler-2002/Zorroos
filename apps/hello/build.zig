@@ -13,7 +13,7 @@ pub fn build(b: *std.build.Builder) void {
 
     const exe = b.addExecutable("hello", "src/main.zig");
 
-    exe.addPackagePath("kernel", "/home/cutiedeng/zig-core/src/sys.zig");
+    exe.addPackagePath("kernel", "/home/cutiedeng/zig-core/src//sys.zig");
     exe.setLinkerScriptPath(.{ .path = "src/linker.ld" }); 
     exe.setTarget(target);
     exe.setBuildMode(mode);

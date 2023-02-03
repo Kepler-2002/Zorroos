@@ -3,7 +3,7 @@ const std = @import("std");
 const lib = @import("kernel"); 
 
 pub export fn _start() callconv(.C) void {
-    const api = lib.abi; 
+    const api = lib; 
     const str = "Hello World\n"; 
     var slice2 : [str.len] u8 = undefined; 
     inline for (str) |c, i| {

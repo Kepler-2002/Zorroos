@@ -1,5 +1,5 @@
 /// 
-const sbi = @import("../sbi.zig"); 
+const sbi = @import("sbi.zig"); 
 pub const call_literals = sbi.call_literals.abi; 
 pub const syscall = sbi.syscall; 
 

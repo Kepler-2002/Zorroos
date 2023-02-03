@@ -11,7 +11,7 @@ const app = @import("app.zig");
 
 export fn trap_handle(trap_context: *TrapContext) callconv(.C) *TrapContext {
     _ = trap_context; 
-    // writer.writeAll("test\n") catch unreachable; 
+    writer.writeAll("test\n") catch unreachable; 
     os.sbi.shutdown(); 
     app.manager.run_next_or_exit(); 
     // @panic("leaf");

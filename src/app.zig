@@ -28,8 +28,8 @@ export fn main() callconv(.C) void {
     ); 
 
     {
-        const sstatus : usize = 0b1_0011_0000; 
-        asm volatile ("csrw sstatus, %[s]" : : [s] "r" (sstatus) ); 
+        // const sstatus : usize = 0b1_0011_0000; 
+        // asm volatile ("csrw sstatus, %[s]" : : [s] "r" (sstatus) ); 
     }
 
     {
@@ -75,15 +75,16 @@ pub const Manager = struct {
         context = traplib.TrapContext {
             .x = blk: {
                 var x: @TypeOf(context.x) = undefined; 
-                x[2] = @ptrToInt(&os.user_stack); 
+                x[2] = @ptrToInt(&os.user_stack) + @sizeOf(@TypeOf(os.user_stack)) - 1; 
+                writer.print("\x1b[34;1m[ DEBUG] then sp would turn: 0x{x}. \x1b[0m\n", .{ x[2], }) catch unreachable; 
                 break :blk x; 
             }, 
             .sepc = 0x80400000, 
             .sstatus = blk: {
                 var x: usize = asm ("csrr %[x], sstatus": [x] "=r" (-> usize));
-                writer.print("{b:032}\n", .{x}) catch unreachable; 
+                writer.print("\x1b[36;1m[  INFO] sstatus: {b}\x1b[0m\n", .{x}) catch unreachable; 
                 x &= ~@as(usize, 0x100);
-                writer.print("{b:032}\n", .{x}) catch unreachable; 
+                writer.print("\x1b[36;1m[  INFO] after remove the bit 8, status: {b}\x1b[0m\n", .{x}) catch unreachable; 
                 break :blk x; 
             }
         }; 
@@ -91,9 +92,10 @@ pub const Manager = struct {
             @memset(@intToPtr([*] u8, 0x80400000), 0, 0x100000); 
             var len = self.app[self.current][1] - self.app[self.current][0]; 
             @memcpy(@intToPtr([*] u8, 0x80400000), @intToPtr([*] const u8, self.app[self.current][0]), len); 
-            asm volatile ("fence.i"); 
+            asm volatile ("fence.i" ::: "~memory"); 
         }
         self.current += 1; 
+        // @panic("exit!"); 
         traplib.restore(&context); 
     }
 
