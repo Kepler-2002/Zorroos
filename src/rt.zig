@@ -19,9 +19,9 @@ comptime {
 }
 
 /// This is the symbol 'sbss' defined in linker.ld, start of the segment '.bss'. 
-extern const sbss : u8; 
+extern const sbss : u8 ; 
 /// Defined in linker.ld, end of the segment '.bss'. 
-extern const ebss : u8; 
+extern const ebss : u8 align (4096) ; 
 
 /// Make the content of segment '.bss' all zero; zero initialized. 
 fn emptyBss() callconv(.Inline) void {
@@ -40,7 +40,7 @@ comptime {
         \\.align 3
         \\.section .data 
         \\app_numbers: 
-        \\.quad 2 
+        \\.quad 2
         \\.quad app0_start
         \\.quad app0_end
         \\.quad app1_start
@@ -51,7 +51,8 @@ comptime {
         \\app0_end: 
         \\.section .data
         \\app1_start:
-        \\.incbin "apps/view/zig-out/bin/view.bin"
+        \\.incbin "apps/hello/zig-out/bin/hello.bin"
+        // \\.incbin "apps/view/zig-out/bin/view.bin"
         \\app1_end:
     );
 }

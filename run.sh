@@ -1,9 +1,10 @@
 #!/usr/bin/bash
 
-# /home/cutiedeng/Downloads/qemu-5.0.0/riscv64-linux-user/qemu-riscv64 zig-out/bin/zig-core
+QEMU=~/Downloads/qemu/qemu-system-riscv64
 
-/home/cutiedeng/Downloads/qemu-5.0.0/riscv64-softmmu/qemu-system-riscv64 \
--machine virt \
--nographic \
--bios rustsbi-qemu.bin \
--device loader,file=zig-out/bin/out.bin,addr=0x80200000 $*
+$QEMU \
+    -machine virt \
+    -nographic \
+    -bios default \
+    -kernel ./zig-out/bin/out.bin \
+    $*

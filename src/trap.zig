@@ -10,33 +10,23 @@ const writer = os.writer;
 const app = @import("app.zig"); 
 
 export fn trap_handle(trap_context: *TrapContext) callconv(.C) *TrapContext {
-    _ = trap_context; 
-    writer.writeAll("test\n") catch unreachable; 
-    os.sbi.shutdown(); 
-    app.manager.run_next_or_exit(); 
-    // @panic("leaf");
-    // const scause: usize = asm (
-    //     \\csrr %[r1], scause
-    //     : [r1] "=r" (-> usize) 
-    // ); 
-    // const stval : usize = asm (
-    //     \\csrr %[r2], stval
-    //     : [r2] "=r" (-> usize) 
-    // ); 
-    // // _ = . {scause, stval}; 
-    // // writer.print("trap!\n", .{}) catch {}; 
-    // // writer.print("[  INFO] scause: {}; stval: 0x{x}\n", .{ scause, stval }) catch |a| switch (a) {}; 
-    // _ = trap_context; 
-    // _ = .{ scause, stval }; 
-    // @panic("leaf");
-    // writer.print("\x1b[36;1m[  INFO] trap handle {{ cause: {}, value: 0x{x}. }}\x1b[0m\n", .{ scause, stval, }) catch {}; 
+    const scause: usize = asm (
+        \\csrr %[r1], scause
+        : [r1] "=r" (-> usize) 
+    ); 
+    const stval : usize = asm (
+        \\csrr %[r2], stval
+        : [r2] "=r" (-> usize) 
+    ); 
+    writer.print("\x1b[36;1m[  INFO] scause: {}; stval: 0x{x}\x1b[0m\n", .{ scause, stval }) catch |a| switch (a) {}; 
+    writer.print("\x1b[36;1m[  INFO] trap handle {{ cause: {}, value: 0x{x}. }}\x1b[0m\n", .{ scause, stval, }) catch {}; 
     // special case ~ ebreak call 
-    // if (scause == 3) {
-    //     trap_context.sepc += 2; 
-    //     return trap_context; 
-    // } else {
-    //     app.manager.run_next_or_exit(); 
-    // }
+    if (scause == 3) {
+        trap_context.sepc += 2; 
+        return trap_context; 
+    } else {
+        app.manager.run_next_or_exit(); 
+    }
 }
 
 comptime {
