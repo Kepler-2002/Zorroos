@@ -16,10 +16,11 @@ export fn main() callconv(.C) void {
     // the addr [XLEN - 1: 2] handle addr ; 
     // mode = 0 : pc to base 
     const base = @ptrToInt(&trap);
+
     // const stvec_val : usize = base & ~@as(usize, 0x3); 
     const stvec_val : usize = base; 
 
-    writer.print("stvec: 0x{x}!\n", .{ stvec_val }) catch unreachable; 
+    writer.print("\x1b[36;1m[  INFO] stvec: 0x{x}!\x1b[0m\n", .{ stvec_val }) catch {}; 
 
     // set the trap handle
     asm volatile (
@@ -41,11 +42,11 @@ export fn main() callconv(.C) void {
         }; 
         // check the manager val ~ 
         writer.print("\x1b[36;1m[  INFO] Initial the manager: \n\tnumber: {}\n\tcurrent: {}\n\tapp: {{ ", 
-            .{ manager.app_numbers, manager.current, }) catch unreachable; 
+            .{ manager.app_numbers, manager.current, }) catch {}; 
         for (manager.app) |a| {
-            writer.print("start: 0x{x}, end: 0x{x}; ", .{ a[0], a[1] }) catch unreachable; 
+            writer.print("start: 0x{x}, end: 0x{x}; ", .{ a[0], a[1] }) catch {}; 
         }
-        writer.writeAll("}\x1b[0m\n") catch unreachable; 
+        writer.writeAll("}\x1b[0m\n") catch {}; 
     }
 
     manager.run_next_or_exit(); 
@@ -62,40 +63,40 @@ pub const Manager = struct {
     pub fn run_next_or_exit(self: *Manager) noreturn {
         if (self.current == self.app_numbers) {
             // shutdown the computer, when all applications are run done. 
-            writer.print("\x1b[32;1m[SYSTEM] All applications are run done. \x1b[0m\n", .{} ) catch unreachable; 
+            writer.print("\x1b[32;1m[SYSTEM] All applications are run done. \x1b[0m\n", .{} ) catch {}; 
             os.sbi.shutdown(); 
         }
-        writer.print("\x1b[36;1m[  INFO] Prepare to run the next application {{ index = {} }} \x1b[0m\n", .{ self.current }) catch unreachable; 
+        writer.print("\x1b[36;1m[  INFO] Prepare to run the next application {{ index = {} }} \x1b[0m\n", .{ self.current }) catch {}; 
         // when run here, it must be the kernel stack used. 
         // display the kernel stack pointer info: 
         writer.print("\x1b[34;1m[ DEBUG] At Manager.run_next_or_exit debug, now sp: 0x{x}.\x1b[0m\n", .{ 
             asm ( "" : [_] "={sp}" (-> usize) ), 
-        }) catch unreachable; 
+        }) catch {}; 
         var context :traplib.TrapContext = undefined; 
         context = traplib.TrapContext {
             .x = blk: {
                 var x: @TypeOf(context.x) = undefined; 
                 x[2] = @ptrToInt(&os.user_stack) + @sizeOf(@TypeOf(os.user_stack)) - 1; 
-                writer.print("\x1b[34;1m[ DEBUG] then sp would turn: 0x{x}. \x1b[0m\n", .{ x[2], }) catch unreachable; 
+                writer.print("\x1b[34;1m[ DEBUG] then sp would turn: 0x{x}. \x1b[0m\n", .{ x[2], }) catch {}; 
                 break :blk x; 
             }, 
             .sepc = 0x80400000, 
             .sstatus = blk: {
                 var x: usize = asm ("csrr %[x], sstatus": [x] "=r" (-> usize));
-                writer.print("\x1b[36;1m[  INFO] sstatus: {b}\x1b[0m\n", .{x}) catch unreachable; 
+                writer.print("\x1b[36;1m[  INFO] sstatus: {x}\x1b[0m\n", .{x}) catch {}; 
                 x &= ~@as(usize, 0x100);
-                writer.print("\x1b[36;1m[  INFO] after remove the bit 8, status: {b}\x1b[0m\n", .{x}) catch unreachable; 
+                writer.print("\x1b[36;1m[  INFO] after remove the bit 8, status: {x}\x1b[0m\n", .{x}) catch {}; 
                 break :blk x; 
             }
         }; 
         {
-            @memset(@intToPtr([*] u8, 0x80400000), 0, 0x100000); 
+            // @memset(@intToPtr([*] u8, 0x80400000), 0, 0x100000); 
             var len = self.app[self.current][1] - self.app[self.current][0]; 
             @memcpy(@intToPtr([*] u8, 0x80400000), @intToPtr([*] const u8, self.app[self.current][0]), len); 
             asm volatile ("fence.i" ::: "~memory"); 
         }
         self.current += 1; 
-        // @panic("exit!"); 
+        writer.writeAll("\x1b[34;1m[ DEBUG] run the user mode app. \x1b[0m\n") catch {}; 
         traplib.restore(&context); 
     }
 

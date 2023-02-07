@@ -18,7 +18,6 @@ export fn trap_handle(trap_context: *TrapContext) callconv(.C) *TrapContext {
         \\csrr %[r2], stval
         : [r2] "=r" (-> usize) 
     ); 
-    writer.print("\x1b[36;1m[  INFO] scause: {}; stval: 0x{x}\x1b[0m\n", .{ scause, stval }) catch |a| switch (a) {}; 
     writer.print("\x1b[36;1m[  INFO] trap handle {{ cause: {}, value: 0x{x}. }}\x1b[0m\n", .{ scause, stval, }) catch {}; 
     // special case ~ ebreak call 
     if (scause == 3) {
