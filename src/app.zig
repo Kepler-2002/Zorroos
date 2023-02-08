@@ -33,6 +33,29 @@ export fn main() callconv(.C) void {
         // asm volatile ("csrw sstatus, %[s]" : : [s] "r" (sstatus) ); 
     }
 
+    if (false) {
+        // test the coding ~ 
+        writer.writeAll("\x1b[36;1m[  INFO] test the coding ~ \x1b[0m\n") catch {};
+        const std = @import("std"); 
+        _ = std.meta.intToEnum; 
+        const set = std.enums.EnumSet( traplib.code.exception ); 
+        var s : set = set.initFull(); 
+        var i = s.iterator();
+        while (i.next()) |x | {
+            writer.print("\x1b[36;1m[  INFO] test the coding ~ {}\x1b[0m\n", .{x}) catch {};
+        }
+    }
+
+    if (true) {
+        // test 1 - 7 is interrupt or not ? 
+        writer.writeAll("\x1b[36;1m[  INFO] test 1 - 7 is interrupt or not ? \x1b[0m\n") catch {};
+        // const std = @import("std");
+        var i : usize = 0; 
+        while (i < 10) : ( i += 1 ) { 
+            writer.print("\x1b[36;1m[  INFO] test 1 - 7 is interrupt or not ? {} is {?}\x1b[0m\n", .{i, traplib.code.fromUsize(traplib.code.interrupt, i) }) catch {};
+        }
+    }
+
     {
         var len = app_info[0]; 
         var offsetptr = @ptrCast([*] [2] usize, app_info + 1); 

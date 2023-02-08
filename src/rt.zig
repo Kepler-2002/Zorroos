@@ -54,7 +54,6 @@ comptime {
         \\.section .data
         \\app1_start:
         \\.incbin "apps/hello/zig-out/bin/hello.bin"
-        // \\.incbin "apps/view/zig-out/bin/view.bin"
         \\app1_end:
         \\app2_start: 
         \\ .incbin "apps/raw/zig-out/bin/hello.bin"

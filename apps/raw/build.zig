@@ -77,7 +77,7 @@ pub fn build(b: *std.Build) void {
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);
 
-    const bin_step = b.addInstallBinFile(std.Build.FileSource { .path = "src/main.zig"}, "hello.bin"); 
+    const bin_step = b.addInstallRaw(exe, "hello.bin", std.Build.InstallRawStep.CreateOptions { .format = .bin } ); 
     const bin = b.step("bin", "Build the raw object. "); 
     bin.dependOn(&bin_step.step); 
 }

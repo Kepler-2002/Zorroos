@@ -9,6 +9,8 @@ const writer = os.writer;
 
 const app = @import("app.zig"); 
 
+pub const code = @import("trap/code.zig"); 
+
 export fn trap_handle(trap_context: *TrapContext) callconv(.C) *TrapContext {
     const scause: usize = asm (
         \\csrr %[r1], scause
