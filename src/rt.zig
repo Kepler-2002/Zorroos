@@ -60,3 +60,9 @@ comptime {
         \\app2_end: 
     );
 }
+
+pub var buffer: [4096] u8 align(4096) = undefined;
+
+const std = @import("std");
+
+pub var allocator : std.heap.FixedBufferAllocator = undefined;

@@ -29,6 +29,12 @@ export fn main() callconv(.C) void {
     ); 
 
     {
+        // set the allocator 
+        const std = @import("std");
+        os.rt.allocator = std.heap.FixedBufferAllocator.init( & os.rt.buffer ); 
+    }
+
+    {
         // const sstatus : usize = 0b1_0011_0000; 
         // asm volatile ("csrw sstatus, %[s]" : : [s] "r" (sstatus) ); 
     }
@@ -46,7 +52,7 @@ export fn main() callconv(.C) void {
         }
     }
 
-    if (true) {
+    if (false) {
         // test 1 - 7 is interrupt or not ? 
         writer.writeAll("\x1b[36;1m[  INFO] test 1 - 7 is interrupt or not ? \x1b[0m\n") catch {};
         // const std = @import("std");
@@ -72,6 +78,9 @@ export fn main() callconv(.C) void {
         writer.writeAll("}\x1b[0m\n") catch {}; 
     }
 
+    var inner : traplib.TrapContext = undefined; 
+
+    traplib.global_trap_context = &inner ; 
     manager.run_next_or_exit(); 
 
 }
@@ -95,8 +104,9 @@ pub const Manager = struct {
         writer.print("\x1b[34;1m[ DEBUG] At Manager.run_next_or_exit debug, now sp: 0x{x}.\x1b[0m\n", .{ 
             asm ( "" : [_] "={sp}" (-> usize) ), 
         }) catch {}; 
-        var context :traplib.TrapContext = undefined; 
-        context = traplib.TrapContext {
+        var inner : traplib.TrapContext = undefined; 
+        var context : * traplib.TrapContext = traplib.global_trap_context orelse &inner; 
+        context.* = traplib.TrapContext {
             .x = blk: {
                 var x: @TypeOf(context.x) = undefined; 
                 x[2] = @ptrToInt(&os.user_stack) + @sizeOf(@TypeOf(os.user_stack)) - 1; 
@@ -120,7 +130,7 @@ pub const Manager = struct {
         }
         self.current += 1; 
         writer.writeAll("\x1b[34;1m[ DEBUG] run the user mode app. \x1b[0m\n") catch {}; 
-        traplib.restore(&context); 
+        traplib.restore(context); 
     }
 
 }; 

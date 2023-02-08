@@ -11,6 +11,8 @@ const app = @import("app.zig");
 
 pub const code = @import("trap/code.zig"); 
 
+pub var global_trap_context: ?*TrapContext = null; 
+
 export fn trap_handle(trap_context: *TrapContext) callconv(.C) *TrapContext {
     const scause: usize = asm (
         \\csrr %[r1], scause
@@ -21,11 +23,16 @@ export fn trap_handle(trap_context: *TrapContext) callconv(.C) *TrapContext {
         : [r2] "=r" (-> usize) 
     ); 
     writer.print("\x1b[36;1m[  INFO] trap handle {{ cause: {}, value: 0x{x}. }}\x1b[0m\n", .{ scause, stval, }) catch {}; 
+    // if (scause & 0x8000_0000 == 0) {
+    //     // 
+    // }
+
     // special case ~ ebreak call 
     if (scause == 3) {
         trap_context.sepc += 2; 
         return trap_context; 
     } else {
+        global_trap_context = trap_context;
         app.manager.run_next_or_exit(); 
     }
 }
