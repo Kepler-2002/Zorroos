@@ -6,19 +6,18 @@
 //! - 
 
 /// sbi support 
-pub const sbi = @import("sbi.zig"); 
+pub const sbi = @import("os/sbi.zig"); 
 /// c runtime support 
-pub const rt = @import("rt.zig"); 
+pub const rt = @import("os/rt.zig"); 
 /// output support 
-pub const io = @import("io.zig"); 
+pub const io = @import("os/io.zig"); 
 /// log support 
-pub const log = @import("log.zig");
+pub const log = @import("os/log.zig");
 /// std lib support 
 pub const std = @import("std"); 
+/// trap support 
+pub const trap = @import("os/trap.zig");
 
-
-/// 4K stack, align is the same... it would at the start of the page actually. 
-pub var user_stack : [4096] u8 align(4096) = undefined; 
 
 /// global panic support 
 pub fn panic(error_message: []const u8, stack: ?*std.builtin.StackTrace, len: ?usize) noreturn {
@@ -40,6 +39,7 @@ fn set_trap() callconv(.C) void {
     // mode = 0 : pc to base 
     // assume the base is 4 byte aligned.
     const base = @ptrToInt(&root.trap);
+
     if (base & 0x3 != 0) {
         @panic("trap base not 4 byte aligned!"); 
     }
@@ -49,6 +49,7 @@ fn set_trap() callconv(.C) void {
         \\csrw stvec, %[val]
         : : [val] "r" (base) 
     ); 
+
 }
 
 comptime {

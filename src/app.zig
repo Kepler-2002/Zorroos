@@ -8,7 +8,7 @@ pub const os = @import("os.zig");
 const log = os.log; 
 const std = os.std; 
 
-pub const traplib = @import("trap.zig"); 
+pub const traplib = os.trap; 
 
 pub const code = @import("trap/code.zig"); 
 
@@ -33,6 +33,9 @@ export fn main() callconv(.C) void {
 
 }
 
+/// 4K stack, align is the same... it would at the start of the page actually. 
+pub var user_stack : [4096] u8 align(4096) = undefined; 
+
 pub var manager : Manager = undefined; 
 
 pub const Manager = struct {
@@ -40,18 +43,18 @@ pub const Manager = struct {
     current : usize = 0, 
     app: [] [2] usize, 
 
-    pub fn run_next_or_exit(self: *Manager, sp: * traplib.TrapContext ) noreturn {
+    fn run_next_or_exit(self: *Manager, sp: * traplib.TrapContext ) noreturn {
         if (self.current == self.app_numbers) {
             log.info("finish all applications, shutdown now!", .{});
             os.sbi.shutdown(); 
         }
         var context = sp; 
         log.info("number: {}", .{ self.app_numbers }); 
-        log.info("current: {}", .{ self.current }); 
+        // log.info("current: {}", .{ self.current }); 
         context.* = traplib.TrapContext {
             .x = blk: {
                 var x: @TypeOf(context.x) = undefined; 
-                x[2] = @ptrToInt(&os.user_stack) + @sizeOf(@TypeOf(os.user_stack)); 
+                x[2] = @ptrToInt(&user_stack) + @sizeOf(@TypeOf(user_stack)); 
                 break :blk x; 
             }, 
             .sepc = 0x80400000, 
@@ -68,6 +71,7 @@ pub const Manager = struct {
         }
         self.current += 1; 
         traplib.restore(context); 
+        // @panic("not implemented yet"); 
     }
 
 }; 
@@ -94,6 +98,11 @@ pub fn trap(trap_context: *traplib.TrapContext) callconv(.C) *traplib.TrapContex
         const scause_val = scause; 
         const exception_val = @intToEnum(code.Exception, scause_val);
         log.info("exception: {}", .{ exception_val, }); 
+        if (exception_val == code.Exception.environment_call_from_u) {
+            @panic(")"); 
+        } else {
+            @panic("not implemented yet");
+        }
     }
 
     // special case ~ ebreak call 
