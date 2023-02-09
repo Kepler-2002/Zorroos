@@ -10,7 +10,7 @@ const std = os.std;
 
 pub const traplib = os.trap; 
 
-pub const code = @import("trap/code.zig"); 
+pub const code = @import("riscv/code.zig"); 
 
 export fn main() callconv(.C) void {
 
@@ -27,14 +27,17 @@ export fn main() callconv(.C) void {
         }; 
     }
 
-    var uninit_trapcontext : traplib.TrapContext = undefined; 
-
-    manager.run_next_or_exit( &uninit_trapcontext ); 
+    var uninit_trapcontext : * traplib.TrapContext = undefined; 
+    const ptr_val = @ptrToInt( &kernel_stack ) + @sizeOf(@TypeOf(kernel_stack)) - @sizeOf(@TypeOf(uninit_trapcontext.*));
+    uninit_trapcontext = @intToPtr( @TypeOf(uninit_trapcontext), ptr_val ); 
+    manager.run_next_or_exit( uninit_trapcontext ); 
 
 }
 
 /// 4K stack, align is the same... it would at the start of the page actually. 
-pub var user_stack : [4096] u8 align(4096) = undefined; 
+var user_stack : [4096] u8 align(4096) = undefined; 
+/// 4K stack, align is the same... it would at the start of the page actually. 
+var kernel_stack : [4096] u8 align(4096) = undefined; 
 
 pub var manager : Manager = undefined; 
 
@@ -48,7 +51,7 @@ pub const Manager = struct {
             log.info("finish all applications, shutdown now!", .{});
             os.sbi.shutdown(); 
         }
-        var context = sp; 
+        const context = sp; 
         log.info("number: {}", .{ self.app_numbers }); 
         // log.info("current: {}", .{ self.current }); 
         context.* = traplib.TrapContext {
@@ -99,7 +102,7 @@ pub fn trap(trap_context: *traplib.TrapContext) callconv(.C) *traplib.TrapContex
         const exception_val = @intToEnum(code.Exception, scause_val);
         log.info("exception: {}", .{ exception_val, }); 
         if (exception_val == code.Exception.environment_call_from_u) {
-            @panic(")"); 
+            // @panic(")"); 
         } else {
             @panic("not implemented yet");
         }
