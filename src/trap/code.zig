@@ -25,7 +25,7 @@ pub const interrupt = enum (usize) {
 }; 
 
 /// 异常枚举
-pub const exception = enum (usize) { 
+pub const Exception = enum (usize) { 
     instruction_address_misaligned = 0, 
     instruction_access_fault = 1, 
     illegal_instruction = 2, 

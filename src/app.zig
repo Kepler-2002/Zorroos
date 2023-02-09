@@ -46,6 +46,8 @@ pub const Manager = struct {
             os.sbi.shutdown(); 
         }
         var context = sp; 
+        log.info("number: {}", .{ self.app_numbers }); 
+        log.info("current: {}", .{ self.current }); 
         context.* = traplib.TrapContext {
             .x = blk: {
                 var x: @TypeOf(context.x) = undefined; 
@@ -87,17 +89,11 @@ pub fn trap(trap_context: *traplib.TrapContext) callconv(.C) *traplib.TrapContex
         \\csrr %[r2], stval
         : [r2] "=r" (-> usize) 
     ); 
-    _ = stval ;
-    // writer.print("\x1b[36;1m[  INFO] trap handle {{ cause: {}, value: 0x{x}. }}\x1b[0m\n", .{ scause, stval, }) catch {}; 
+    log.debug("trap handle {{ cause: {}, value: 0x{x}. }}", .{ scause, stval, }); 
     if (scause & 0x8000_0000 == 0) {
         const scause_val = scause; 
-        const exception_val = std.meta.intToEnum(code.exception, scause_val) catch |err| {
-            // writer.print("\x1b[31;1m[ ERROR] unknown trap cause: {}\x1b[0m\n", .{ err, }) catch {}; 
-            err catch {}; 
-            @panic("unknown trap cause");
-        }; 
-        _ = exception_val; 
-        // writer.print("\x1b[32;1m[  INFO] exception: {}\x1b[0m\n", .{ exception_val, }) catch {};
+        const exception_val = @intToEnum(code.Exception, scause_val);
+        log.info("exception: {}", .{ exception_val, }); 
     }
 
     // special case ~ ebreak call 
@@ -107,4 +103,9 @@ pub fn trap(trap_context: *traplib.TrapContext) callconv(.C) *traplib.TrapContex
     } else {
         manager.run_next_or_exit( trap_context ); 
     }
+
+}
+
+comptime {
+    _ = @import("app/apps.zig"); 
 }
