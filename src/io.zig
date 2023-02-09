@@ -1,13 +1,35 @@
 //! This part is the IO part. 
 //! The class `Stdout` is the core object defined to give the output abstract. 
-//! Use the fn `getStdOut` to get it! 
+//! The `stdout` is the globally unique instance of `Stdout`: only use it to print the info ~ 
+//! 
+//! ## Module Structure 
+//! ### sbi module 
+//! io module should use the sbi interface to output the info, on the console. 
+//! 
 
-/// Get the stdout output abstract, actually no-op now. 
-pub fn getStdOut() callconv(.Inline) Stdout {
-    return Stdout {}; 
+/// The sbi interface module. 
+/// The sbi interface is the core interface to interact with the OS. (actually by sbi to manipulate the machine) 
+const sbi = @import("root").os.sbi; 
+
+/// ### The stdout instance. 
+/// The stdout is the globally unique instance of `Stdout`.
+/// Only use it to print the info ~ 
+pub const stdout = Stdout { } ; 
+
+/// The stdout writer. 
+/// The writer is the core object to output the info. 
+/// I have known that you would get the error info when you use the writer. 
+/// So just use `print` method ~ in the same module to avoid it! 
+pub const writer = stdout.writer(); 
+
+/// The print method. 
+/// The print method is the core method to output the info.
+/// It will use the `writer` to output the info.
+/// The `print` method will not return the error info.
+pub fn print (comptime a: [] const u8, b: anytype ) callconv(.Inline) void {
+    // handle the error by shutdown my machine. 
+    writer.print(a, b) catch sbi.shutdown(); 
 }
-
-pub const writer = ( Stdout {} ).writer(); 
 
 /// The std support. 
 const std = @import("std"); 
@@ -21,7 +43,9 @@ const Stdout = struct {
     fn write(_: Stdout, data: []const u8) EmptyError!usize {
         // do not promote the efficiency of the program. 
         // @call(.{ .modifier = .always_inline, }, sys.unsafePrintBuffer, .{ data }); 
-        sys.unsafePrintBuffer(data); 
+        for (data) | d| {
+            sbi.consolePutchar(d);
+        }
         return data.len; 
     }
 
@@ -29,6 +53,16 @@ const Stdout = struct {
         return .{
             .context = self, 
         }; 
+    }
+
+    pub fn lock(self: *Stdout) void {
+        // do nothing. 
+        _ = self; 
+    }
+
+    pub fn unlock(self: *Stdout) void {
+        // do nothing. 
+        _ = self;
     }
 
 }; 

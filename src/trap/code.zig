@@ -24,6 +24,7 @@ pub const interrupt = enum (usize) {
     machine_external_interrupt = 11, 
 }; 
 
+/// 异常枚举
 pub const exception = enum (usize) { 
     instruction_address_misaligned = 0, 
     instruction_access_fault = 1, 
@@ -42,17 +43,3 @@ pub const exception = enum (usize) {
 }; 
 
 pub const std = @import("std"); 
-
-pub fn fromUsize( comptime ErrorType : type , val : usize ) ?ErrorType {
-    switch (ErrorType ) {
-        exception, interrupt => {}, 
-        else => @compileError("ErrorType is not interrupt or exception"), 
-    }
-    const members = std.meta.fields(ErrorType); 
-    inline for (members) |member| {
-        if (member.value == val) {
-            return @intToEnum(ErrorType, val); 
-        }
-    }
-    return null; 
-}

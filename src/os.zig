@@ -5,19 +5,17 @@
 //! - (io) output support: define the terminal output (by sbi interface) format object: writer. 
 //! - 
 
+/// sbi support 
 pub const sbi = @import("sbi.zig"); 
-
-pub const abi = @import("abi.zig"); 
-
+/// c runtime support 
 pub const rt = @import("rt.zig"); 
-pub const runtime = rt; 
-
+/// output support 
 pub const io = @import("io.zig"); 
-pub const @"input&output" = io; 
-
+/// log support 
+pub const log = @import("log.zig");
+/// std lib support 
 pub const std = @import("std"); 
 
-pub const writer = io.writer; 
 
 /// 4K stack, align is the same... it would at the start of the page actually. 
 pub var user_stack : [4096] u8 align(4096) = undefined; 
@@ -26,13 +24,31 @@ pub var user_stack : [4096] u8 align(4096) = undefined;
 pub fn panic(error_message: []const u8, stack: ?*std.builtin.StackTrace, len: ?usize) noreturn {
     _ = stack; 
     _ = len; 
-    // sync / lock support desired [[TODO]]
-    writer.print("\x1b[31;1m{s}\x1b[0m\r\n", .{ error_message }) catch |a| switch (a) {}; 
+    log.err("panic: {s}", .{ error_message, } ); 
     sbi.shutdown(); 
 }
 
-pub fn init() !void {
+pub fn init() void {
     inline for (rt.init) |r | r(); 
+    set_trap(); 
+}
+
+const root = @import("root"); 
+
+fn set_trap() callconv(.C) void {
+    // the addr [XLEN - 1: 2] handle addr ; 
+    // mode = 0 : pc to base 
+    // assume the base is 4 byte aligned.
+    const base = @ptrToInt(&root.trap);
+    if (base & 0x3 != 0) {
+        @panic("trap base not 4 byte aligned!"); 
+    }
+
+    // set the trap handle
+    asm volatile (
+        \\csrw stvec, %[val]
+        : : [val] "r" (base) 
+    ); 
 }
 
 comptime {

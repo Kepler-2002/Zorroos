@@ -26,22 +26,11 @@ pub fn consolePutchar(c: usize) callconv(.Inline) void {
     _ = syscall(call_literals.sbi.console_putchar, [3] usize {c, 0, 0, }); 
 }
 
-/// Just print the buffer casually, the encapsulation fn of `consolePutchar`. 
-pub fn unsafePrintBuffer(chars : []const u8) void {
-    for (chars ) |c| {
-        consolePutchar(@intCast(usize, c));
-    }
-}
-
 /// the special literals for call literals... 
 /// Maybe the better idea is ... use `enum` ? [[TODO]]
 pub const call_literals = struct {
-    const sbi = struct {
+    pub const sbi = struct {
         pub const shutdown : usize = 8; 
         pub const console_putchar : usize = 1; 
     };
-    pub const abi = struct {
-        pub const write : usize = 64; 
-        pub const exit : usize = 93; 
-    }; 
 }; 
