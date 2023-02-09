@@ -18,6 +18,8 @@ comptime {
     ); 
 }
 
+pub extern var boot_stack_top : u8 align(4096) ; 
+
 /// This is the symbol 'sbss' defined in linker.ld, start of the segment '.bss'. 
 extern const sbss : u8 ; 
 /// Defined in linker.ld, end of the segment '.bss'. 

@@ -34,3 +34,7 @@ pub fn panic(error_message: []const u8, stack: ?*std.builtin.StackTrace, len: ?u
 pub fn init() !void {
     inline for (rt.init) |r | r(); 
 }
+
+comptime {
+    _ = @import("elf.zig"); 
+}

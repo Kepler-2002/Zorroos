@@ -104,12 +104,14 @@ pub const Manager = struct {
         writer.print("\x1b[34;1m[ DEBUG] At Manager.run_next_or_exit debug, now sp: 0x{x}.\x1b[0m\n", .{ 
             asm ( "" : [_] "={sp}" (-> usize) ), 
         }) catch {}; 
-        var inner : traplib.TrapContext = undefined; 
-        var context : * traplib.TrapContext = traplib.global_trap_context orelse &inner; 
+        // var inner : traplib.TrapContext = undefined; 
+        var context : * traplib.TrapContext = 
+            // traplib.global_trap_context orelse &inner; 
+            @intToPtr ( * traplib.TrapContext, @ptrToInt(&os.rt.boot_stack_top) - @sizeOf(traplib.TrapContext) ); 
         context.* = traplib.TrapContext {
             .x = blk: {
                 var x: @TypeOf(context.x) = undefined; 
-                x[2] = @ptrToInt(&os.user_stack) + @sizeOf(@TypeOf(os.user_stack)) - 1; 
+                x[2] = @ptrToInt(&os.user_stack) + @sizeOf(@TypeOf(os.user_stack)); 
                 writer.print("\x1b[34;1m[ DEBUG] then sp would turn: 0x{x}. \x1b[0m\n", .{ x[2], }) catch {}; 
                 break :blk x; 
             }, 
