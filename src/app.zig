@@ -24,8 +24,9 @@ export fn main() callconv(.C) void {
             .app = offsetptr[0..len], 
         }; 
         log.debug("app manager {{ {} ; {} ; {any} }}", .{ manager.app_numbers, manager.current, manager.app, } ); 
-        @panic(""); 
+        // @panic(""); 
     }
+
     var uninit_trapcontext : * TrapContext = undefined; 
     const ptr_val = @ptrToInt( &kernel_stack ) + @sizeOf(@TypeOf(kernel_stack)) - @sizeOf(@TypeOf(uninit_trapcontext.*));
     uninit_trapcontext = @intToPtr( @TypeOf(uninit_trapcontext), ptr_val ); 
@@ -51,7 +52,7 @@ pub const Manager = struct {
         }
         const context = sp; 
         log.info("number: {}", .{ self.app_numbers }); 
-        // log.info("current: {}", .{ self.current }); 
+        log.info("current: {}", .{ self.current }); 
         context.* = TrapContext {
             .x = blk: {
                 var x: @TypeOf(context.x) = undefined; 
@@ -73,7 +74,6 @@ pub const Manager = struct {
         self.current += 1; 
         os.trap.restore(context); 
     }
-
 }; 
 
 /// define the panic function, as the os kernel function . 
@@ -89,7 +89,8 @@ pub fn trap(trap_context: *TrapContext) callconv(.C) *TrapContext {
         \\csrr %[r2], stval
         : [r2] "=r" (-> usize) 
     ); 
-    log.debug("trap handle {{ cause: {}, value: 0x{x}. }}", .{ scause, stval, }); 
+    const sepc : usize = trap_context.sepc;
+    log.debug("trap handle {{ cause: {}, value: 0x{x}, sepc: 0x{x} }}", .{ scause, stval, sepc, }); 
     if (scause & 0x8000_0000 == 0) {
         const scause_val = scause; 
         const exception_val = @intToEnum(code.Exception, scause_val);
@@ -97,10 +98,9 @@ pub fn trap(trap_context: *TrapContext) callconv(.C) *TrapContext {
         if (exception_val == code.Exception.environment_call_from_u) {
             // @panic(")"); 
         } else {
-            @panic("not implemented yet");
+            // @panic("not implemented yet");
         }
     }
-
     // special case ~ ebreak call 
     if (scause == 3) {
         trap_context.sepc += 2; 
@@ -108,7 +108,6 @@ pub fn trap(trap_context: *TrapContext) callconv(.C) *TrapContext {
     } else {
         manager.run_next_or_exit( trap_context ); 
     }
-
 }
 
 comptime {

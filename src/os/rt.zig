@@ -41,7 +41,8 @@ fn setTrap() callconv(.Inline) void {
     // the addr [XLEN - 1: 2] handle addr ; 
     // mode = 0 : pc to base 
     // assume the base is 4 byte aligned.
-    const base = @ptrToInt(&os.trap_handle); 
+    // const base = @ptrToInt(&os.trap.trap); 
+    const base = @ptrToInt(&os.trap.trap); 
 
     if (base & 0x3 != 0) {
         @panic("trap base not 4 byte aligned!"); 
