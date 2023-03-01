@@ -1,4 +1,4 @@
-const Builder = @import("std").build.Builder;
+const Builder = @import("std").build; 
 const builtin = @import("builtin");
 const std = @import("std");
 
@@ -35,9 +35,15 @@ pub fn build(b: *Builder) !void {
 
     src.install(); 
 
-    const bin = b.addInstallRaw(src, "out.bin", .{ .format = .bin });
-    bin.step.dependOn(&src.step);
+    // b.addInstallBinFile("out", "out.bin");
 
-    const build_bin = b.step("bin", "generate the binary object. "); 
-    build_bin.dependOn(&bin.step);
+    // b.installBinFile("src/app.zig", "out.bin"); 
+    // b.addInstallRaw;
+
+    // const bin = b.addInstallRaw(src, "out.bin", .{ .format = .bin });
+    // bin.step.dependOn(&src.step);
+
+    // const build_bin = b.step("bin", "generate the binary object. "); 
+    // build_bin.dependOn(&bin.step);
 }
+

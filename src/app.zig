@@ -24,7 +24,6 @@ export fn main() callconv(.C) void {
             .app = offsetptr[0..len], 
         }; 
         log.debug("app manager {{ {} ; {} ; {any} }}", .{ manager.app_numbers, manager.current, manager.app, } ); 
-        // @panic(""); 
     }
 
     var uninit_trapcontext : * TrapContext = undefined; 
